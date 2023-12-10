@@ -10,10 +10,10 @@
 #                 - For best results this script should be called using the
 #                   Linux `watch` utility like:
 #
-# watch -tn X ./watch_bacula_SD-FD.py [-S storageName] [-C clientName] 
+# watch -tn X ./watch_bacula_SD-FD.py [-S storageName] [-C clientName]
 #
 # - Where X is some number of seconds between iterations
-# - And '-S storageName' and/or '-C clientName' must be specified 
+# - And '-S storageName' and/or '-C clientName' must be specified
 # 
 # The latest version of this script may be found at: https://github.com/waa
 #
@@ -64,7 +64,7 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.03'
+version = '0.04'
 reldate = 'December 10, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
@@ -131,8 +131,6 @@ def running_jobs(fs):
 
 def get_version_and_daemon(fs):
     'Use re.match() to grab the Bacula SD/FD version from the full_status output.'
-    # ver_match = re.match('.* Version: (\d+\.\d+\.\d+) .*', fs, flags = re.S)
-    # speedy-sd Version: 15.0.0 (01 November 2023) x86_64-pc-linux-gnu archlinux
     match = re.match('.*\n(.*?) Version: (\d+\.\d+\.\d+) .*', fs, flags = re.S)
     if match:
         ver = match[2]
@@ -160,12 +158,13 @@ def get_clean_and_print_output(cl):
                + (client if cl else storage) \
                + (' (' if print_daemon_ver or print_daemon_name else '') \
                + (daemon if print_daemon_name else '') \
-               + (' ' if print_daemon_name and print_daemon_ver else '') + ('v' + version if print_daemon_ver else '') \
+               + (' ' if print_daemon_name and print_daemon_ver else '') \
+               + ('v' + version if print_daemon_ver else '') \
                + (')' if print_daemon_ver or print_daemon_name else '') \
                + ('  (No Jobs Running)' if len(status) == 0 else '') \
                + '\n'
     line = '='*(int(len(header_str)) - 2)
-    print(line + header_str + line + (status if len(status) > 0 else '')) 
+    print(line + header_str + line + (status if len(status) > 0 else ''))
 
 # ================
 # BEGIN the script
