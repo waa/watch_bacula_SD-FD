@@ -64,7 +64,7 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.04'
+version = '0.05'
 reldate = 'December 10, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
@@ -161,7 +161,7 @@ def get_clean_and_print_output(cl):
                + (' ' if print_daemon_name and print_daemon_ver else '') \
                + ('v' + version if print_daemon_ver else '') \
                + (')' if print_daemon_ver or print_daemon_name else '') \
-               + ('  (No Jobs Running)' if len(status) == 0 else '') \
+               + (' - No Jobs Running' if len(status) == 0 else '') \
                + '\n'
     line = '='*(int(len(header_str)) - 2)
     print(line + header_str + line + (status if len(status) > 0 else ''))
