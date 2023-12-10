@@ -64,8 +64,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.01'
-reldate = 'December 09, 2023'
+version = '0.02'
+reldate = 'December 10, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -74,8 +74,9 @@ prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
 
 # Set some strings to be removed from the Storage and Client status outputs
 # -------------------------------------------------------------------------
-st_remove_str_lst = ['Director connected.*', 'No Jobs running\.', ' +FDReadSeqNo.*?\n', ' +FDSocket.*?\n']
-cl_remove_str_lst = ['Director connected.*', 'No Jobs running\.', ' +SDReadSeqNo=.*?\n', ' +SDSocket.*?\n']
+st_remove_str_lst = ['Connecting to Director.*\n', 'Director connected.*$',
+                     ' +FDReadSeqNo.*?\n', ' +FDSocket.*?\n', 'No Jobs running\.$',
+                     ' +SDReadSeqNo=.*?\n', ' +SDSocket.*?\n']
 
 # Define the docopt string
 # ------------------------
@@ -119,8 +120,44 @@ def print_opt_errors(opt):
     return '\n' + error_txt
 
 def get_shell_result(cmd):
-    'Given a command to run, return the subprocess.run() result.'
+    'Given a command to run, return the subprocess.run() result object.'
     return subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+def running_jobs(fs):
+    'Use re.sub() to grab the "Running Jobs:" section from the full_status output.'
+    return re.sub('.*Running Jobs:\n(.+?)\n====.*', '\\1', fs, flags = re.S)
+
+def get_version(fs):
+    'Use re.match() to grab the Bacula SD/FD version from the full_status output.'
+    ver_match = re.match('.* Version: (\d+\.\d+\.\d+) .*', fs, flags = re.S)
+    if ver_match:
+        ver = ver_match[1]
+    else:
+        ver = 'N/A'
+    return ver
+
+def get_clean_and_print_output(cl):
+    'Passed True (ie: client=True), build and output Client-specific block, else Storage-specific block.'
+    cmd_str = 'echo -e "status ' + ('client=' if cl else 'storage=') \
+            + (client if cl else storage) + ' running\nquit\n"'
+    cmd = cmd_str + ' | ' + bconsole + ' -c ' + config 
+    full_status = get_shell_result(cmd).stdout
+    version = get_version(full_status)
+    status = running_jobs(full_status)
+    # Clean up the returned "Running Jobs:" block of text
+    # ---------------------------------------------------
+    for remove_str in st_remove_str_lst:
+        status = re.sub(remove_str, '', status, flags = re.S)
+    status = re.sub('(JobId |Writing: )', '\n\\1', status, flags = re.S)
+    if cl:
+        line = '='*(19 + int(len(client) + int(len(version)) + 4))
+    else:
+        line = '='*(20 + int(len(storage) + int(len(version)) + 4))
+    print(line + '\nMonitoring ' + ('Client: ' if cl else 'Storage: ') \
+          + (client if cl else storage) + ' (v' + version + ')' \
+          + ('  (No Jobs Running)' if len(status) == 0 else '') \
+          + '\n' + line \
+          + (status if len(status) > 0 else ''))
 
 # ================
 # BEGIN the script
@@ -152,34 +189,9 @@ if not os.path.exists(config) or not os.access(config, os.R_OK):
     print(print_opt_errors('config'))
     usage()
 
-def get_status():
-    status = get_shell_result(cmd)
-    return re.sub('.*Running Jobs:\n(.+?)\n====.*', '\\1', status.stdout, flags = re.S)
-
-# Get the bconsole 'running' output from the Storage and/or Client (or both)
-# clean them up and print them out with a 'Monitoring (Storage|Client)' header
-# ----------------------------------------------------------------------------
+# Call get_clean_and_print_output() for Storage, or Client, or both
+# -----------------------------------------------------------------
 if storage is not None:
-        cmd_str = 'echo -e ".status storage=' + storage + ' running\nquit\n"'
-        cmd = cmd_str + ' | ' + bconsole + ' -c ' + config 
-        status = get_status()
-        for remove_str in st_remove_str_lst:
-            status = re.sub(remove_str, '', status, flags = re.S)
-        status = re.sub('(Writing:)', '\n\\1', status, flags = re.S)
-        line = '='*(20 + int(len(storage)))
-        print(line + '\nMonitoring Storage: ' + storage \
-              + ('  (No Jobs Running)' if len(status) == 0 else '') \
-              + '\n' + line \
-              + (status if len(status) > 0 else ''))
+    get_clean_and_print_output(False)
 if client is not None:
-        cmd_str = 'echo -e "status client=' + client + ' running\nquit\n"'
-        cmd = cmd_str + ' | ' + bconsole + ' -c ' + config 
-        status = get_status()
-        for remove_str in cl_remove_str_lst:
-            status = re.sub(remove_str, '', status, flags = re.S)
-        status = re.sub('(JobId)', '\n\\1', status, flags = re.S)
-        line = '='*(19 + int(len(client)))
-        print(line + '\nMonitoring Client: ' + client \
-              + ('  (No Jobs Running)' if len(status) == 0 else '') \
-              + '\n' + line \
-              + (status if len(status) > 0 else ''))
+    get_clean_and_print_output(True)
