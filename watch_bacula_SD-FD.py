@@ -14,6 +14,8 @@
 #
 # - Where X is some number of seconds between iterations
 # - And '-S storageName' and/or '-C clientName' must be specified
+# - Use '-V no' to disable the damon version in the header
+# - Use '-N no' to disable the damon name in the header
 # 
 # The latest version of this script may be found at: https://github.com/waa
 #
@@ -64,7 +66,7 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.05'
+version = '0.06'
 reldate = 'December 10, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
@@ -142,8 +144,7 @@ def get_version_and_daemon(fs):
 
 def get_clean_and_print_output(cl):
     'Passed True (ie: client=True), build and output Client-specific block, else Storage-specific block.'
-    cmd_str = 'echo -e "status ' + ('client=' if cl else 'storage=') \
-            + (client if cl else storage) + ' running\nquit\n"'
+    cmd_str = 'echo -e "status ' + ('client=' + client if cl else 'storage=' + storage) + ' running\nquit\n"'
     cmd = cmd_str + ' | ' + bconsole + ' -c ' + config 
     full_status = get_shell_result(cmd).stdout
     if print_daemon_ver or print_daemon_name:
