@@ -66,7 +66,7 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.07'
+version = '0.08'
 reldate = 'December 11, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
@@ -155,8 +155,7 @@ def get_clean_and_print_output(cl):
     for remove_str in remove_str_lst:
         status = re.sub(remove_str, '', status, flags = re.S)
     status = re.sub('(JobId |Reading: |Writing: )', '\n\\1', status, flags = re.S)
-    header_str = '\n' + ('Client: ' if cl else 'Storage: ') \
-               + (client if cl else storage) \
+    header_str = '\n' + ('Client: ' + client if cl else 'Storage: ' + storage) \
                + (' (' if print_daemon_ver or print_daemon_name else '') \
                + (daemon if print_daemon_name else '') \
                + (' ' if print_daemon_name and print_daemon_ver else '') \
