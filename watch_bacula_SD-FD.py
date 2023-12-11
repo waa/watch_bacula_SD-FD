@@ -66,8 +66,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.06'
-reldate = 'December 10, 2023'
+version = '0.07'
+reldate = 'December 11, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -76,9 +76,9 @@ prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
 
 # Set some strings to be removed from the Storage and Client status outputs
 # -------------------------------------------------------------------------
-st_remove_str_lst = ['Connecting to Director.*\n', 'Director connected.*$',
-                     ' +FDReadSeqNo.*?\n', ' +FDSocket.*?\n', 'No Jobs running\.$',
-                     ' +SDReadSeqNo=.*?\n', ' +SDSocket.*?\n']
+remove_str_lst = ['Connecting to Director.*\n', 'Director connected.*$',
+                  ' +FDReadSeqNo.*?\n', ' +FDSocket.*?\n', 'No Jobs running\.$',
+                  ' +SDReadSeqNo=.*?\n', ' +SDSocket.*?\n']
 
 # Define the docopt string
 # ------------------------
@@ -145,16 +145,16 @@ def get_version_and_daemon(fs):
 def get_clean_and_print_output(cl):
     'Passed True (ie: client=True), build and output Client-specific block, else Storage-specific block.'
     cmd_str = 'echo -e "status ' + ('client=' + client if cl else 'storage=' + storage) + ' running\nquit\n"'
-    cmd = cmd_str + ' | ' + bconsole + ' -c ' + config 
+    cmd = cmd_str + ' | ' + bconsole + ' -c ' + config
     full_status = get_shell_result(cmd).stdout
     if print_daemon_ver or print_daemon_name:
         version, daemon = get_version_and_daemon(full_status)
     else:
         daemon = version = ''
     status = running_jobs(full_status)
-    for remove_str in st_remove_str_lst:
+    for remove_str in remove_str_lst:
         status = re.sub(remove_str, '', status, flags = re.S)
-    status = re.sub('(JobId |Writing: )', '\n\\1', status, flags = re.S)
+    status = re.sub('(JobId |Reading: |Writing: )', '\n\\1', status, flags = re.S)
     header_str = '\n' + ('Client: ' if cl else 'Storage: ') \
                + (client if cl else storage) \
                + (' (' if print_daemon_ver or print_daemon_name else '') \
