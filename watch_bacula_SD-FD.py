@@ -13,9 +13,13 @@
 # watch -tn X ./watch_bacula_SD-FD.py [-S storageName] [-C clientName]
 #
 # - Where X is some number of seconds between iterations
-# - And '-S storageName' and/or '-C clientName' must be specified
-# - Use '-V no' to disable the damon version in the header
-# - Use '-N no' to disable the damon name in the header
+# - Use '-V no' to disable the daemon version in the headers
+# - Use '-N no' to disable the daemon name in the headers
+# - One or both of '-S storageName' '-C clientName' must be specified
+#   *NOTE: Multiple Storage and/or Client names may be specified by
+#          separating them with commas and no spaces like:
+#
+#          watch -tn X ./watch_bacula_SD-FD.py -S stor1,stor2 -C cli1,cli2
 # 
 # The latest version of this script may be found at: https://github.com/waa
 #
@@ -66,8 +70,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.08'
-reldate = 'December 11, 2023'
+version = '0.09'
+reldate = 'December 12, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -76,9 +80,14 @@ prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
 
 # Set some strings to be removed from the Storage and Client status outputs
 # -------------------------------------------------------------------------
-remove_str_lst = ['Connecting to Director.*\n', 'Director connected.*$',
+remove_str_lst = ['Backup Job .* waiting for.*connection.\n',
+                  'Connecting to Director.*\n', 'Director connected.*$',
                   ' +FDReadSeqNo.*?\n', ' +FDSocket.*?\n', 'No Jobs running\.$',
                   ' +SDReadSeqNo=.*?\n', ' +SDSocket.*?\n']
+
+# Create the storage and client place holder lists
+# ------------------------------------------------
+storage_lst = client_lst = []
 
 # Define the docopt string
 # ------------------------
@@ -164,7 +173,7 @@ def get_clean_and_print_output(cl):
                + (' - No Jobs Running' if len(status) == 0 else '') \
                + '\n'
     line = '='*(int(len(header_str)) - 2)
-    print(line + header_str + line + (status if len(status) > 0 else ''))
+    print(line + header_str + line + ('\n' if len(status) == 0 else '') + (status if len(status) > 0 else ''))
 
 # ================
 # BEGIN the script
@@ -189,8 +198,10 @@ if args['--storage'] is None and args['--client'] is None:
     print(print_opt_errors('sd_fd'))
     usage()
 else:
-    storage = args['--storage']
-    client = args['--client']
+    if args['--storage'] is not None:
+        storage_lst = [s for s in args['--storage'].split(',')]
+    if args['--client'] is not None:
+        client_lst = [c for c in args['--client'].split(',')]
 
 # Check that the bconsole binary exists and is executable
 # -------------------------------------------------------
@@ -206,7 +217,9 @@ if not os.path.exists(config) or not os.access(config, os.R_OK):
 
 # Call get_clean_and_print_output() for Storage, or Client, or both
 # -----------------------------------------------------------------
-if storage is not None:
-    get_clean_and_print_output(False)
-if client is not None:
-    get_clean_and_print_output(True)
+if storage_lst is not None:
+    for storage in storage_lst:
+        get_clean_and_print_output(False)
+if client_lst is not None:
+    for client in client_lst:
+        get_clean_and_print_output(True)
