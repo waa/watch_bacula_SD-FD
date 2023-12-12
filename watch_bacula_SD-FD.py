@@ -63,14 +63,13 @@
 import os
 import re
 import sys
-import shutil
 import subprocess
 from docopt import docopt
 
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.09'
+version = '0.10'
 reldate = 'December 12, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
@@ -205,7 +204,7 @@ else:
 
 # Check that the bconsole binary exists and is executable
 # -------------------------------------------------------
-if shutil.which(bconsole) is None:
+if not os.path.exists(bconsole) or not os.access(bconsole, os.X_OK):
     print(print_opt_errors('bin'))
     usage()
 
