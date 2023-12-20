@@ -69,8 +69,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.10'
-reldate = 'December 12, 2023'
+version = '0.11'
+reldate = 'December 20, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -92,8 +92,7 @@ storage_lst = client_lst = []
 # ------------------------
 doc_opt_str = """
 Usage:
-    watch_bacula_SD-FD.py [-b <bconsole>] [-c <config>] [-S <storage>] [-C <client>]
-                          [-V <daemon_ver>] [-N <daemon_name>]
+    watch_bacula_SD-FD.py [-b <bconsole>] [-c <config>] [-S <storage>] [-C <client>] [-V] [-N] [-D]
     watch_bacula_SD-FD.py -h | --help
     watch_bacula_SD-FD.py -v | --version
 
@@ -102,14 +101,15 @@ Options:
     -c, --config <config>            Configuration file [default: /opt/bacula/etc/bconsole.conf]
     -S, --storage <storage>          Storage to monitor
     -C, --client <client>            Client to monitor
-    -V, --daemon_ver <daemon_ver>    Do we print the daemon version in header? [default: yes]
-    -N, --daemon_name <daemon_name>  Do we print the daemon name in header? [default: yes]
+    -D, --dont_print_cloud           Do we print the cloud stats for the SD output?
+    -V, --dont_print_daemon_ver      Do we print the daemon version in header?
+    -N, --dont_print_daemon_name     Do we print the daemon name in header?
 
     -h, --help                       Print this help message
     -v, --version                    Print the script name and version
 
 Notes:
-  * A valid storage or a client, or both must be specified
+  * A valid storage or a client, or both, must be specified
 
 """
 
@@ -136,8 +136,15 @@ def get_shell_result(cmd):
     return subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
 def running_jobs(fs):
-    'Use re.sub() to grab the "Running Jobs:" section from the full_status output.'
+    'Given a full_status output, use re.sub() to grab the "Running Jobs:" section from the full_status output.'
     return re.sub('.*Running Jobs:\n(.+?)\n====.*', '\\1', fs, flags = re.S)
+
+def cloud_xfers(fs):
+    'Given a full_status output, use re.sub() to grab the "Cloud transfer status:" section from the full_status output.'
+    if 'Cloud transfer status' in fs:
+        return re.sub('.*Cloud transfer status:.*?\n(.+?)\n====.*', '\\1', fs, flags = re.S)
+    else:
+        return ''
 
 def get_version_and_daemon(fs):
     'Use re.match() to grab the Bacula SD/FD version from the full_status output.'
@@ -152,27 +159,38 @@ def get_version_and_daemon(fs):
 
 def get_clean_and_print_output(cl):
     'Passed True (ie: client=True), build and output Client-specific block, else Storage-specific block.'
-    cmd_str = 'echo -e "status ' + ('client=' + client if cl else 'storage=' + storage) + ' running\nquit\n"'
+    cmd_str = 'echo -e "status ' + ('client=' + client if cl else 'storage=' + storage) + '\nquit\n"'
     cmd = cmd_str + ' | ' + bconsole + ' -c ' + config
     full_status = get_shell_result(cmd).stdout
     if print_daemon_ver or print_daemon_name:
         version, daemon = get_version_and_daemon(full_status)
     else:
         daemon = version = ''
-    status = running_jobs(full_status)
+    running_status = running_jobs(full_status)
+    # Try to get the cloud transfer status if we are contacting an SD
+    # ---------------------------------------------------------------
+    if not cl:
+        cloud_status = cloud_xfers(full_status)
+        cloud_status = re.sub(' +(Uploads)', '\n\\1:', cloud_status)
+        cloud_status = re.sub(' +(Downloads)', '\\1:', cloud_status)
+    else:
+        cloud_status = ''
     for remove_str in remove_str_lst:
-        status = re.sub(remove_str, '', status, flags = re.S)
-    status = re.sub('(JobId |Reading: |Writing: )', '\n\\1', status, flags = re.S)
+        running_status = re.sub(remove_str, '', running_status, flags = re.S)
+    running_status = re.sub('(JobId |Reading: |Writing: )', '\n\\1', running_status, flags = re.S)
     header_str = '\n' + ('Client: ' + client if cl else 'Storage: ' + storage) \
                + (' (' if print_daemon_ver or print_daemon_name else '') \
                + (daemon if print_daemon_name else '') \
                + (' ' if print_daemon_name and print_daemon_ver else '') \
                + ('v' + version if print_daemon_ver else '') \
                + (')' if print_daemon_ver or print_daemon_name else '') \
-               + (' - No Jobs Running' if len(status) == 0 else '') \
+               + (' - No Jobs Running' if len(running_status) == 0 else '') \
                + '\n'
     line = '='*(int(len(header_str)) - 2)
-    print(line + header_str + line + ('\n' if len(status) == 0 else '') + (status if len(status) > 0 else ''))
+    print(line + header_str + line \
+          + ('\n' if len(running_status) == 0 else '') \
+          + (running_status if len(running_status) > 0 else '') \
+          + (cloud_status + '\n' if (len(cloud_status) > 0 and len(running_status) > 0) else ''))
 
 # ================
 # BEGIN the script
@@ -185,14 +203,9 @@ args = docopt(doc_opt_str, version='\n' + progname + ' - v' + version + '\n' + r
 # ------------------------------
 bconsole = args['--bconsole']
 config = args['--config']
-if args['--daemon_ver'].lower() == 'yes':
-    print_daemon_ver = True
-else:
-    print_daemon_ver = False
-if args['--daemon_name'].lower() == 'yes':
-    print_daemon_name = True
-else:
-    print_daemon_name = False
+print_daemon_ver = not args['--dont_print_daemon_ver']
+print_daemon_name = not args['--dont_print_daemon_name']
+print_cloud_stats = not args['--dont_print_cloud']
 if args['--storage'] is None and args['--client'] is None:
     print(print_opt_errors('sd_fd'))
     usage()
