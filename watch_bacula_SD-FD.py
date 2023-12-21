@@ -97,8 +97,8 @@ Usage:
     watch_bacula_SD-FD.py -v | --version
 
 Options:
-    -b, --bconsole <bconsole>        Path to bconsole [default: /opt/comm-bacula/sbin/bconsole]
-    -c, --config <config>            Configuration file [default: /opt/comm-bacula/etc/bconsole.conf]
+    -b, --bconsole <bconsole>        Path to bconsole [default: /opt/bacula/bin/bconsole]
+    -c, --config <config>            Configuration file [default: /opt/bacula/etc/bconsole.conf]
     -S, --storage <storage>          Storage to monitor
     -C, --client <client>            Client to monitor
     -N, --dont_print_daemon_name     Do we print the daemon name in header?
