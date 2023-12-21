@@ -69,8 +69,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.11'
-reldate = 'December 20, 2023'
+version = '0.12'
+reldate = 'December 21, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -97,13 +97,13 @@ Usage:
     watch_bacula_SD-FD.py -v | --version
 
 Options:
-    -b, --bconsole <bconsole>        Path to bconsole [default: /opt/bacula/bin/bconsole]
-    -c, --config <config>            Configuration file [default: /opt/bacula/etc/bconsole.conf]
+    -b, --bconsole <bconsole>        Path to bconsole [default: /opt/comm-bacula/sbin/bconsole]
+    -c, --config <config>            Configuration file [default: /opt/comm-bacula/etc/bconsole.conf]
     -S, --storage <storage>          Storage to monitor
     -C, --client <client>            Client to monitor
-    -D, --dont_print_cloud           Do we print the cloud stats for the SD output?
-    -V, --dont_print_daemon_ver      Do we print the daemon version in header?
     -N, --dont_print_daemon_name     Do we print the daemon name in header?
+    -V, --dont_print_daemon_ver      Do we print the daemon version in header?
+    -D, --dont_print_cloud           Do we print the cloud stats for the SD output?
 
     -h, --help                       Print this help message
     -v, --version                    Print the script name and version
@@ -169,7 +169,7 @@ def get_clean_and_print_output(cl):
     running_status = running_jobs(full_status)
     # Try to get the cloud transfer status if we are contacting an SD
     # ---------------------------------------------------------------
-    if not cl:
+    if not cl and print_cloud_stats:
         cloud_status = cloud_xfers(full_status)
         cloud_status = re.sub(' +(Uploads)', '\n\\1:', cloud_status)
         cloud_status = re.sub(' +(Downloads)', '\\1:', cloud_status)
