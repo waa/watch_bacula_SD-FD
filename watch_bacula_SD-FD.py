@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 #
-# ---------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
 # - watch_bacula_SD-FD.py
-# ---------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
 #
 # - Bill Arlofski - Given a Storage or Client (or both) on the command line,
 #                   this script will contact the Director using bconsole, get
@@ -10,11 +10,12 @@
 #                 - For best results this script should be called using the
 #                   Linux `watch` utility like:
 #
-# watch -tn X ./watch_bacula_SD-FD.py [-S storageName] [-C clientName]
+# watch -tn X ./watch_bacula_SD-FD.py [-S storageName] [-C clientName] [-V] [-N] [-D]
 #
 # - Where X is some number of seconds between iterations
-# - Use '-V no' to disable the daemon version in the headers
-# - Use '-N no' to disable the daemon name in the headers
+# - Use -V to disable the daemon version in the headers
+# - Use -N to disable the daemon name in the headers
+# - Use -D to disable cloud Upload and Download statistics for SD output
 # - One or both of '-S storageName' '-C clientName' must be specified
 #   *NOTE: Multiple Storage and/or Client names may be specified by
 #          separating them with commas and no spaces like:
@@ -23,7 +24,7 @@
 # 
 # The latest version of this script may be found at: https://github.com/waa
 #
-# ---------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
 #
 # BSD 2-Clause License
 #
