@@ -10,12 +10,13 @@
 #                 - For best results this script should be called using the
 #                   Linux `watch` utility like:
 #
-# watch -tn X ./watch_bacula_SD-FD.py [-S storageName] [-C clientName] [-V] [-N] [-D]
+# watch -tn X ./watch_bacula_SD-FD.py [-S storageName] [-C clientName] [-V] [-N] [-D] [-J]
 #
 # - Where X is some number of seconds between iterations
 # - Use -V to disable the daemon version in the headers
 # - Use -N to disable the daemon name in the headers
 # - Use -D to disable cloud Upload and Download statistics for SD output
+# - Use -J to strip the long timestamp from the job names displayed
 # - One or both of '-S storageName' '-C clientName' must be specified
 #   *NOTE: Multiple Storage and/or Client names may be specified by
 #          separating them with commas and no spaces like:
@@ -70,8 +71,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.12'
-reldate = 'December 21, 2023'
+version = '0.13'
+reldate = 'January 11, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -93,7 +94,7 @@ storage_lst = client_lst = []
 # ------------------------
 doc_opt_str = """
 Usage:
-    watch_bacula_SD-FD.py [-b <bconsole>] [-c <config>] [-S <storage>] [-C <client>] [-V] [-N] [-D]
+    watch_bacula_SD-FD.py [-b <bconsole>] [-c <config>] [-S <storage>] [-C <client>] [-V] [-N] [-D] [-J]
     watch_bacula_SD-FD.py -h | --help
     watch_bacula_SD-FD.py -v | --version
 
@@ -105,6 +106,7 @@ Options:
     -N, --dont_print_daemon_name     Do we print the daemon name in header?
     -V, --dont_print_daemon_ver      Do we print the daemon version in header?
     -D, --dont_print_cloud           Do we print the cloud stats for the SD output?
+    -J, --strip_jobname              Do we strip the long timestamp from job names?
 
     -h, --help                       Print this help message
     -v, --version                    Print the script name and version
@@ -179,6 +181,8 @@ def get_clean_and_print_output(cl):
     for remove_str in remove_str_lst:
         running_status = re.sub(remove_str, '', running_status, flags = re.S)
     running_status = re.sub('(JobId |Reading: |Writing: )', '\n\\1', running_status, flags = re.S)
+    if strip_jobname:
+        running_status = re.sub('\.[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}\.[0-9]{2}\.[0-9}{2}_[0-9].*? ', ' ', running_status)
     header_str = '\n' + ('Client: ' + client if cl else 'Storage: ' + storage) \
                + (' (' if print_daemon_ver or print_daemon_name else '') \
                + (daemon if print_daemon_name else '') \
@@ -207,6 +211,7 @@ config = args['--config']
 print_daemon_ver = not args['--dont_print_daemon_ver']
 print_daemon_name = not args['--dont_print_daemon_name']
 print_cloud_stats = not args['--dont_print_cloud']
+strip_jobname = args['--strip_jobname']
 if args['--storage'] is None and args['--client'] is None:
     print(print_opt_errors('sd_fd'))
     usage()
