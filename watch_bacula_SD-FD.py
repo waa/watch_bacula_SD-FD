@@ -71,8 +71,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.13'
-reldate = 'January 11, 2023'
+version = '0.14'
+reldate = 'January 12, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -160,7 +160,7 @@ def get_version_and_daemon(fs):
         daemon = 'N/A'
     return ver, daemon
 
-def get_clean_and_print_output(cl):
+def get_and_clean_output(cl):
     'Passed True (ie: client=True), build and output Client-specific block, else Storage-specific block.'
     cmd_str = 'echo -e "status ' + ('client=' + client if cl else 'storage=' + storage) + '\nquit\n"'
     cmd = cmd_str + ' | ' + bconsole + ' -c ' + config
@@ -192,7 +192,7 @@ def get_clean_and_print_output(cl):
                + (' - No Jobs Running' if len(running_status) == 0 else '') \
                + '\n'
     line = '='*(int(len(header_str)) - 2)
-    print(line + header_str + line \
+    return (line + header_str + line \
           + ('\n' if len(running_status) == 0 else '') \
           + (running_status if len(running_status) > 0 else '') \
           + (cloud_status + '\n' if (len(cloud_status) > 0 and len(running_status) > 0) else ''))
@@ -233,11 +233,13 @@ if not os.path.exists(config) or not os.access(config, os.R_OK):
     print(print_opt_errors('config'))
     usage()
 
-# Call get_clean_and_print_output() for Storage, or Client, or both
+# Call get_and_clean_output() for Storage(s), or Client(s), or both
 # -----------------------------------------------------------------
+output = ''
 if storage_lst is not None:
     for storage in storage_lst:
-        get_clean_and_print_output(False)
+        output += get_and_clean_output(False)
 if client_lst is not None:
     for client in client_lst:
-        get_clean_and_print_output(True)
+        output += '\n' + get_and_clean_output(True)
+print(output)
