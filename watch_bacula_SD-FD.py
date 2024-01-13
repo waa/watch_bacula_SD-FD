@@ -29,7 +29,7 @@
 #
 # BSD 2-Clause License
 #
-# Copyright (c) 2023, William A. Arlofski waa@revpol.com
+# Copyright (c) 2023-2024, William A. Arlofski waa@revpol.com
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -99,17 +99,17 @@ Usage:
     watch_bacula_SD-FD.py -v | --version
 
 Options:
-    -b, --bconsole <bconsole>        Path to bconsole [default: /opt/bacula/bin/bconsole]
-    -c, --config <config>            Configuration file [default: /opt/bacula/etc/bconsole.conf]
-    -S, --storage <storage>          Storage to monitor
-    -C, --client <client>            Client to monitor
-    -N, --dont_print_daemon_name     Do we print the daemon name in header?
-    -V, --dont_print_daemon_ver      Do we print the daemon version in header?
-    -D, --dont_print_cloud           Do we print the cloud stats for the SD output?
-    -J, --strip_jobname              Do we strip the long timestamp from job names?
+    -b, --bconsole <bconsole>       Path to bconsole [default: /opt/comm-bacula/sbin/bconsole]
+    -c, --config <config>           Configuration file [default: /opt/comm-bacula/etc/bconsole.conf]
+    -S, --storage <storage>         Storage to monitor
+    -C, --client <client>           Client to monitor
+    -N, --dont_print_daemon_name    Do we print the daemon name in header?
+    -V, --dont_print_daemon_ver     Do we print the daemon version in header?
+    -D, --dont_print_cloud          Do we print the cloud stats for the SD output?
+    -J, --strip_jobname             Do we strip the long timestamp from job names?
 
-    -h, --help                       Print this help message
-    -v, --version                    Print the script name and version
+    -h, --help                      Print this help message
+    -v, --version                   Print the script name and version
 
 Notes:
   * A valid storage or a client, or both, must be specified
