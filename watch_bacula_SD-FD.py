@@ -71,8 +71,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.14'
-reldate = 'January 12, 2023'
+version = '0.15'
+reldate = 'February 25, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -86,7 +86,7 @@ remove_str_lst = ['Backup Job .* waiting for.*connection.\n',
                   ' +FDReadSeqNo.*?\n', ' +FDSocket.*?\n', 'No Jobs running\.$',
                   ' +SDReadSeqNo=.*?\n', ' +SDSocket.*?\n']
 
-# Create the storage and client place holder lists
+# Create the storage and client list place holders
 # ------------------------------------------------
 storage_lst = client_lst = []
 
@@ -94,7 +94,7 @@ storage_lst = client_lst = []
 # ------------------------
 doc_opt_str = """
 Usage:
-    watch_bacula_SD-FD.py [-b <bconsole>] [-c <config>] [-S <storage>] [-C <client>] [-V] [-N] [-D] [-J]
+    watch_bacula_SD-FD.py [-b <bconsole>] [-c <config>] [-S <storage>] [-C <client>] [-V] [-N] [-D] [-J] [-s]
     watch_bacula_SD-FD.py -h | --help
     watch_bacula_SD-FD.py -v | --version
 
@@ -107,6 +107,7 @@ Options:
     -V, --dont_print_daemon_ver     Do we print the daemon version in header?
     -D, --dont_print_cloud          Do we print the cloud stats for the SD output?
     -J, --strip_jobname             Do we strip the long timestamp from job names?
+    -s, --print_spool               Do we print the SD's spooling information line? (default: Omit SD spool line)
 
     -h, --help                      Print this help message
     -v, --version                   Print the script name and version
@@ -162,6 +163,7 @@ def get_version_and_daemon(fs):
 
 def get_and_clean_output(cl):
     'Passed True (ie: client=True), build and output Client-specific block, else Storage-specific block.'
+    cloud_status = ''
     cmd_str = 'echo -e "status ' + ('client=' + client if cl else 'storage=' + storage) + '\nquit\n"'
     cmd = cmd_str + ' | ' + bconsole + ' -c ' + config
     full_status = get_shell_result(cmd).stdout
@@ -172,12 +174,15 @@ def get_and_clean_output(cl):
     running_status = running_jobs(full_status)
     # Try to get the cloud transfer status if we are contacting an SD
     # ---------------------------------------------------------------
-    if not cl and print_cloud_stats:
-        cloud_status = cloud_xfers(full_status)
-        cloud_status = re.sub(' +(Uploads)', '\n\\1:', cloud_status)
-        cloud_status = re.sub(' +(Downloads)', '\\1:', cloud_status)
-    else:
-        cloud_status = ''
+    if not cl:
+        if print_cloud_stats:
+            cloud_status = cloud_xfers(full_status)
+            cloud_status = re.sub(' +(Uploads)', '\n\\1:', cloud_status)
+            cloud_status = re.sub(' +(Downloads)', '\\1:', cloud_status)
+        # Do we print the spooling information for an SD?
+        # -----------------------------------------------
+        if not print_spool_line:
+            running_status = re.sub('(.*)    spooling=.+?\n(.*)', '\\1\\2\n', running_status, flags = re.S)
     for remove_str in remove_str_lst:
         running_status = re.sub(remove_str, '', running_status, flags = re.S)
     running_status = re.sub('(JobId |Reading: |Writing: )', '\n\\1', running_status, flags = re.S)
@@ -191,7 +196,7 @@ def get_and_clean_output(cl):
                + (')' if print_daemon_ver or print_daemon_name else '') \
                + (' - No Jobs Running' if len(running_status) == 0 else '') \
                + '\n'
-    line = '='*(int(len(header_str)) - 2)
+    line = '='*(len(header_str) - 2)
     return (line + header_str + line \
           + ('\n' if len(running_status) == 0 else '') \
           + (running_status if len(running_status) > 0 else '') \
@@ -200,6 +205,7 @@ def get_and_clean_output(cl):
 # ================
 # BEGIN the script
 # ================
+
 # Assign docopt doc string variable
 # ---------------------------------
 args = docopt(doc_opt_str, version='\n' + progname + ' - v' + version + '\n' + reldate + '\n')
@@ -211,6 +217,7 @@ config = args['--config']
 print_daemon_ver = not args['--dont_print_daemon_ver']
 print_daemon_name = not args['--dont_print_daemon_name']
 print_cloud_stats = not args['--dont_print_cloud']
+print_spool_line = args['--print_spool']
 strip_jobname = args['--strip_jobname']
 if args['--storage'] is None and args['--client'] is None:
     print(print_opt_errors('sd_fd'))
