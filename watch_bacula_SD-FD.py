@@ -4,19 +4,20 @@
 # - watch_bacula_SD-FD.py
 # ----------------------------------------------------------------------------------
 #
-# - Bill Arlofski - Given a Storage or Client (or both) on the command line,
+# - Bill Arlofski - Given a Client or Storage (or both) on the command line,
 #                   this script will contact the Director using bconsole, get
 #                   the status(es) and print the running jobs information.
 #                 - For best results this script should be called using the
 #                   Linux `watch` utility like:
 #
-# watch -tn X ./watch_bacula_SD-FD.py [-S storageName] [-C clientName] [-V] [-N] [-D] [-J]
+# watch -tn X ./watch_bacula_SD-FD.py [-C clientName] [-S storageName] [-N] [-V] [-J] [-D] [-s]
 #
 # - Where X is some number of seconds between iterations
-# - Use -V to disable the daemon version in the headers
 # - Use -N to disable the daemon name in the headers
-# - Use -D to disable cloud Upload and Download statistics for SD output
+# - Use -V to disable the daemon version in the headers
 # - Use -J to strip the long timestamp from the job names displayed
+# - Use -D to disable cloud Upload and Download statistics for SD output
+#   Use -s to print the SD's spooling information line. (Default: Omit SD spool line)
 # - One or both of '-S storageName' '-C clientName' must be specified
 #   *NOTE: Multiple Storage and/or Client names may be specified by
 #          separating them with commas and no spaces like:
@@ -71,8 +72,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.15'
-reldate = 'February 25, 2023'
+version = '0.16'
+reldate = 'February 26, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -94,26 +95,26 @@ storage_lst = client_lst = []
 # ------------------------
 doc_opt_str = """
 Usage:
-    watch_bacula_SD-FD.py [-b <bconsole>] [-c <config>] [-S <storage>] [-C <client>] [-V] [-N] [-D] [-J] [-s]
+    watch_bacula_SD-FD.py [-b <bconsole>] [-c <config>] [-C <client>] [-S <storage>] [-N] [-V] [-J] [-D] [-s]
     watch_bacula_SD-FD.py -h | --help
     watch_bacula_SD-FD.py -v | --version
 
 Options:
     -b, --bconsole <bconsole>       Path to bconsole [default: /opt/comm-bacula/sbin/bconsole]
     -c, --config <config>           Configuration file [default: /opt/comm-bacula/etc/bconsole.conf]
-    -S, --storage <storage>         Storage to monitor
-    -C, --client <client>           Client to monitor
+    -C, --client <client>           Client(s) to monitor
+    -S, --storage <storage>         Storage(s) to monitor
     -N, --dont_print_daemon_name    Do we print the daemon name in header?
     -V, --dont_print_daemon_ver     Do we print the daemon version in header?
-    -D, --dont_print_cloud          Do we print the cloud stats for the SD output?
     -J, --strip_jobname             Do we strip the long timestamp from job names?
+    -D, --dont_print_cloud          Do we print the cloud status for the SD output? (default: Print cloud statuses)
     -s, --print_spool               Do we print the SD's spooling information line? (default: Omit SD spool line)
 
     -h, --help                      Print this help message
     -v, --version                   Print the script name and version
 
 Notes:
-  * A valid storage or a client, or both, must be specified
+  * A valid client or storage, or both, must be specified
 
 """
 
@@ -182,7 +183,7 @@ def get_and_clean_output(cl):
         # Do we print the spooling information for an SD?
         # -----------------------------------------------
         if not print_spool_line:
-            running_status = re.sub('(.*)    spooling=.+?\n(.*)', '\\1\\2\n', running_status, flags = re.S)
+            running_status = re.sub('    spooling=.+?\n', '', running_status, flags = re.S)
     for remove_str in remove_str_lst:
         running_status = re.sub(remove_str, '', running_status, flags = re.S)
     running_status = re.sub('(JobId |Reading: |Writing: )', '\n\\1', running_status, flags = re.S)
