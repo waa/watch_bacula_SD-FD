@@ -72,8 +72,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.16'
-reldate = 'February 26, 2023'
+version = '0.17'
+reldate = 'March 10, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -82,7 +82,7 @@ prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
 
 # Set some strings to be removed from the Storage and Client status outputs
 # -------------------------------------------------------------------------
-remove_str_lst = ['Backup Job .* waiting for.*connection.\n',
+remove_str_lst = [' newbsr=[01]', 'Backup Job .* waiting for.*connection.\n',
                   'Connecting to Director.*\n', 'Director connected.*$',
                   ' +FDReadSeqNo.*?\n', ' +FDSocket.*?\n', 'No Jobs running\.$',
                   ' +SDReadSeqNo=.*?\n', ' +SDSocket.*?\n']
