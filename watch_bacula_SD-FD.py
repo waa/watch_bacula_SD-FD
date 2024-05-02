@@ -23,7 +23,7 @@
 #          separating them with commas and no spaces like:
 #
 #          watch -tn X ./watch_bacula_SD-FD.py -S stor1,stor2 -C cli1,cli2
-# 
+#
 # The latest version of this script may be found at: https://github.com/waa
 #
 # ----------------------------------------------------------------------------------
@@ -72,8 +72,8 @@ from docopt import docopt
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.17'
-reldate = 'March 10, 2023'
+version = '0.18'
+reldate = 'May 01, 2023'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = sys.argv[0]
@@ -84,7 +84,7 @@ prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
 # -------------------------------------------------------------------------
 remove_str_lst = [' newbsr=[01]', 'Backup Job .* waiting for.*connection.\n',
                   'Connecting to Director.*\n', 'Director connected.*$',
-                  ' +FDReadSeqNo.*?\n', ' +FDSocket.*?\n', 'No Jobs running\.$',
+                  ' +FDReadSeqNo.*?\n', ' +FDSocket.*?\n', 'No Jobs running\\.$',
                   ' +SDReadSeqNo=.*?\n', ' +SDSocket.*?\n']
 
 # Create the storage and client list place holders
@@ -153,7 +153,7 @@ def cloud_xfers(fs):
 
 def get_version_and_daemon(fs):
     'Use re.match() to grab the Bacula SD/FD version from the full_status output.'
-    match = re.match('.*\n(.*?) Version: (\d+\.\d+\.\d+) .*', fs, flags = re.S)
+    match = re.match(r'.*\n(.*?) Version: (\d+\.\d+\.\d+) .*', fs, flags = re.S)
     if match:
         ver = match[2]
         daemon = match[1]
@@ -188,7 +188,7 @@ def get_and_clean_output(cl):
         running_status = re.sub(remove_str, '', running_status, flags = re.S)
     running_status = re.sub('(JobId |Reading: |Writing: )', '\n\\1', running_status, flags = re.S)
     if strip_jobname:
-        running_status = re.sub('\.[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}\.[0-9]{2}\.[0-9}{2}_[0-9].*? ', ' ', running_status)
+        running_status = re.sub(r'\.[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}\.[0-9]{2}\.[0-9}{2}_[0-9].*? ', ' ', running_status)
     header_str = '\n' + ('Client: ' + client if cl else 'Storage: ' + storage) \
                + (' (' if print_daemon_ver or print_daemon_name else '') \
                + (daemon if print_daemon_name else '') \
