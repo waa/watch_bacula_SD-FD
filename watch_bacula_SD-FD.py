@@ -10,14 +10,14 @@
 #                 - For best results this script should be called using the
 #                   Linux `watch` utility like:
 #
-# watch -tn X ./watch_bacula_SD-FD.py [-C clientName] [-S storageName] [-N] [-V] [-J] [-D] [-s]
+# watch -tn X ./watch_bacula_SD-FD.py [-C clientName] [-S storageName] [-N] [-V] [-J] [-L] [-s]
 #
 # - Where X is some number of seconds between iterations
 # - Use -N to disable the daemon name in the headers
 # - Use -V to disable the daemon version in the headers
-# - Use -J to strip the long timestamp from the job names displayed
-# - Use -D to disable cloud Upload and Download statistics for SD output
-#   Use -s to print the SD's spooling information line. (Default: Omit SD spool line)
+# - Use -J to not strip the long timestamp from the job names displayed
+# - Use -L to print the cloud Upload and Download statistics for SD output
+# - Use -s to print the SD's spooling information line
 # - One or both of '-S storageName' '-C clientName' must be specified
 #   *NOTE: Multiple Storage and/or Client names may be specified by
 #          separating them with commas and no spaces like:
@@ -66,17 +66,17 @@
 import os
 import re
 import sys
+import argparse
 import subprocess
-from docopt import docopt
 
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.18'
-reldate = 'May 01, 2023'
+version = '0.19'
+reldate = 'August 28, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
-scriptname = sys.argv[0]
+scriptname = 'watch_bacula_SD-FD.py'
 prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
                 + '\nBy: ' + progauthor + ' ' + authoremail + ' (c) ' + reldate + '\n\n'
 
@@ -91,39 +91,28 @@ remove_str_lst = [' newbsr=[01]', 'Backup Job .* waiting for.*connection.\n',
 # ------------------------------------------------
 storage_lst = client_lst = []
 
-# Define the docopt string
-# ------------------------
-doc_opt_str = """
-Usage:
-    watch_bacula_SD-FD.py [-b <bconsole>] [-c <config>] [-C <client>] [-S <storage>] [-N] [-V] [-J] [-D] [-s]
-    watch_bacula_SD-FD.py -h | --help
-    watch_bacula_SD-FD.py -v | --version
-
-Options:
-    -b, --bconsole <bconsole>       Path to bconsole [default: /opt/comm-bacula/sbin/bconsole]
-    -c, --config <config>           Configuration file [default: /opt/comm-bacula/etc/bconsole.conf]
-    -C, --client <client>           Client(s) to monitor
-    -S, --storage <storage>         Storage(s) to monitor
-    -N, --dont_print_daemon_name    Do we print the daemon name in header?
-    -V, --dont_print_daemon_ver     Do we print the daemon version in header?
-    -J, --strip_jobname             Do we strip the long timestamp from job names?
-    -D, --dont_print_cloud          Do we print the cloud status for the SD output? (default: Print cloud statuses)
-    -s, --print_spool               Do we print the SD's spooling information line? (default: Omit SD spool line)
-
-    -h, --help                      Print this help message
-    -v, --version                   Print the script name and version
-
-Notes:
-  * A valid client or storage, or both, must be specified
-
-"""
+# Define the argparse arguments, descriptions, defaults, etc
+# waa - Something to look into: https://www.reddit.com/r/Python/comments/11hqsbv/i_am_sick_of_writing_argparse_boilerplate_code_so/
+# ---------------------------------------------------------------------------------------------------------------------------------
+parser = argparse.ArgumentParser(prog=scriptname, description='Print out relevent running job information from SD(s) and/or FD(s)')
+parser.add_argument('-v', '--version', help='Print the script version', version=scriptname + " v" + version, action='version')
+parser.add_argument('-b', '--bconsole', help='Path to bconsole binary [default: /opt/bacula/bin/bconsole]', default='/opt/bacula/bin/bconsole', type=argparse.FileType('r'))
+parser.add_argument('-c', '--config', help='Path to bconsole configuration file [default: /opt/bacula/etc/bconsole.conf]', default='/opt/bacula/etc/bconsole.conf', type=argparse.FileType('r'))
+parser.add_argument('-C', '--client', help='Client(s) to monitor eg:  -C cli1[,cli2,...]')
+parser.add_argument('-S', '--storage', help='Storage(s) to monitor eg:  -S stor1[,stor2,...]')
+parser.add_argument('-N', '--dont_print_daemon_name', help='Don\'t print the daemon name in header? [default: False]', action='store_true')
+parser.add_argument('-V', '--dont_print_daemon_ver', help='Don\'t print the daemon version in header? [default: False]', action='store_true')
+parser.add_argument('-J', '--dont_strip_jobname', help='Don\'t strip the timestamp from job name? [default: False]', action='store_true')
+parser.add_argument('-L', '--print_cloud', help='Print the cloud status for the SD output? [default: True]', action='store_true')
+parser.add_argument('-s', '--print_spool', help='Print the SD\'s spooling information line? [default: False]', action='store_true')
+args = parser.parse_args()
 
 # Now for some functions
 # ----------------------
 def usage():
     'Show the instructions and program information.'
-    print(doc_opt_str)
-    print(prog_info_txt)
+    parser.print_help()
+    print('\n' + prog_info_txt)
     sys.exit(1)
 
 def print_opt_errors(opt):
@@ -206,28 +195,23 @@ def get_and_clean_output(cl):
 # ================
 # BEGIN the script
 # ================
-
-# Assign docopt doc string variable
-# ---------------------------------
-args = docopt(doc_opt_str, version='\n' + progname + ' - v' + version + '\n' + reldate + '\n')
-
 # Assign variables from args set
 # ------------------------------
-bconsole = args['--bconsole']
-config = args['--config']
-print_daemon_ver = not args['--dont_print_daemon_ver']
-print_daemon_name = not args['--dont_print_daemon_name']
-print_cloud_stats = not args['--dont_print_cloud']
-print_spool_line = args['--print_spool']
-strip_jobname = args['--strip_jobname']
-if args['--storage'] is None and args['--client'] is None:
+bconsole = args.bconsole.name
+config = args.config.name
+print_cloud_stats = args.print_cloud
+print_spool_line = args.print_spool
+print_daemon_ver = not args.dont_print_daemon_ver
+print_daemon_name = not args.dont_print_daemon_name
+strip_jobname = not args.dont_strip_jobname
+if args.storage is None and args.client is None:
     print(print_opt_errors('sd_fd'))
     usage()
 else:
-    if args['--storage'] is not None:
-        storage_lst = [s for s in args['--storage'].split(',')]
-    if args['--client'] is not None:
-        client_lst = [c for c in args['--client'].split(',')]
+    if args.storage is not None:
+        storage_lst = [s for s in args.storage.split(',')]
+    if args.client is not None:
+        client_lst = [c for c in args.client.split(',')]
 
 # Check that the bconsole binary exists and is executable
 # -------------------------------------------------------
