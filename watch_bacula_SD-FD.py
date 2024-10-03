@@ -72,8 +72,8 @@ import subprocess
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.19'
-reldate = 'August 28, 2024'
+version = '0.20'
+reldate = 'October 03, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = 'watch_bacula_SD-FD.py'
@@ -228,10 +228,8 @@ if not os.path.exists(config) or not os.access(config, os.R_OK):
 # Call get_and_clean_output() for Storage(s), or Client(s), or both
 # -----------------------------------------------------------------
 output = ''
-if storage_lst is not None:
-    for storage in storage_lst:
-        output += get_and_clean_output(False)
-if client_lst is not None:
-    for client in client_lst:
-        output += '\n' + get_and_clean_output(True)
+for storage in storage_lst:
+    output += ('\n' if storage_lst.index(storage) != 0 else '') + get_and_clean_output(False)
+for client in client_lst:
+    output += ('\n' if client_lst.index(client) != 0 or len(storage_lst) !=0 else '') + get_and_clean_output(True)
 print(output)
