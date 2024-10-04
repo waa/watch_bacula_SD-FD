@@ -72,7 +72,7 @@ import subprocess
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.20'
+version = '0.21'
 reldate = 'October 03, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
@@ -152,15 +152,13 @@ def get_version_and_daemon(fs):
     return ver, daemon
 
 def get_and_clean_output(cl):
-    'Passed True (ie: client=True), build and output Client-specific block, else Storage-specific block.'
+    'If passed True (ie: get_and_clean_output(True), build and output Client-specific block, else Storage-specific block.'
     cloud_status = ''
     cmd_str = 'echo -e "status ' + ('client=' + client if cl else 'storage=' + storage) + '\nquit\n"'
     cmd = cmd_str + ' | ' + bconsole + ' -c ' + config
     full_status = get_shell_result(cmd).stdout
     if print_daemon_ver or print_daemon_name:
         version, daemon = get_version_and_daemon(full_status)
-    else:
-        daemon = version = ''
     running_status = running_jobs(full_status)
     # Try to get the cloud transfer status if we are contacting an SD
     # ---------------------------------------------------------------
@@ -190,7 +188,7 @@ def get_and_clean_output(cl):
     return (line + header_str + line \
           + ('\n' if len(running_status) == 0 else '') \
           + (running_status if len(running_status) > 0 else '') \
-          + (cloud_status + '\n' if (len(cloud_status) > 0 and len(running_status) > 0) else ''))
+          + (cloud_status + '\n' if not cl and (len(cloud_status) > 0 and len(running_status) > 0) else ''))
 
 # ================
 # BEGIN the script
