@@ -1,36 +1,18 @@
 #!/usr/bin/python3
 #
-# ----------------------------------------------------------------------------------
-# - watch_bacula_SD-FD.py
-# ----------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
+# - watch_bacula_SD-FD.py - Latest version may be found at: https://github.com/waa
+# --------------------------------------------------------------------------------
 #
 # - Bill Arlofski - Given a Client or Storage (or both) on the command line,
-#                   this script will contact the Director using bconsole, get
-#                   the status(es) and print the running jobs information.
-#                 - For best results this script should be called using the
-#                   Linux `watch` utility like:
-#
-# watch -tn X ./watch_bacula_SD-FD.py [-C clientName] [-S storageName] [-N] [-V] [-J] [-L] [-s]
-#
-# - Where X is some number of seconds between iterations
-# - Use -N to disable the daemon name in the headers
-# - Use -V to disable the daemon version in the headers
-# - Use -J to not strip the long timestamp from the job names displayed
-# - Use -L to print the cloud Upload and Download statistics for SD output
-# - Use -s to print the SD's spooling information line
-# - One or both of '-S storageName' '-C clientName' must be specified
-#   *NOTE: Multiple Storage and/or Client names may be specified by
-#          separating them with commas and no spaces like:
-#
-#          watch -tn X ./watch_bacula_SD-FD.py -S stor1,stor2 -C cli1,cli2
-#
-# The latest version of this script may be found at: https://github.com/waa
-#
-# ----------------------------------------------------------------------------------
+#                   this script will contact to the Director using bconsole,
+#                   get the status(es) and print the running jobs information.
+#                 - Please see included README.md for instructions and examples.
+# --------------------------------------------------------------------------------
 #
 # BSD 2-Clause License
 #
-# Copyright (c) 2023-2024, William A. Arlofski waa@revpol.com
+# Copyright (c) 2023-2025, William A. Arlofski waa@revpol.com
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
