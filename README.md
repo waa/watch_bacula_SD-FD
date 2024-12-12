@@ -1,5 +1,7 @@
 # watch_bacula_SD-FD.py
 
+- A script to monitor running job information from SD(s) and/or FD(s).
+
 ```
 Usage: watch_bacula_SD-FD.py [-h] [-v] [-b BCONSOLE] [-c CONFIG] [-C CLIENT] [-S STORAGE] [-N] [-V] [-J] [-L] [-s]
 
@@ -26,7 +28,7 @@ options:
   -s, --print_spool     Print the SD's spooling information line? [default: False]
 ```
 
-## Example Usage:
+### Example Usage:
 ```
 # watch -tnX watch_bacula_SD-FD.py [-C clientName] [-S storageName] [-N] [-V] [-J] [-L] [-s]
 
@@ -43,14 +45,14 @@ options:
 # watch -tnX ./watch_bacula_SD-FD.py -S stor1,stor2 -C cli1,cli2
 ```
 
-## Sample command line to monitor one SD and two Clients while a job is running:
+### Sample command line to monitor one SD and two Clients while a job is running:
 ```
 # watch -tn1 watch_bacula_SD-FD.py -S bacula-file -C bacula-fd,x1carbon-fd
 ```
 
 Note: Since we are calling `watch_bacula_SD-FD.py` using `watch -tn1`, the output below will be dynamically updated every second:
 
-## Sample output using the above command line:
+### Sample output using the above command line:
 ```
 ========================================
 Storage: bacula-file (bacula-sd v15.0.2)
