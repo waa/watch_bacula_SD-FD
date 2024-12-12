@@ -48,7 +48,7 @@ options:
 # watch -tn1 watch_bacula_SD-FD.py -S bacula-file -C bacula-fd,x1carbon-fd
 ```
 
-Note: Since we are calling `watch_bacula_SD-FD.py` using `watch -tn1`, the output below will be updated every second:
+Note: Since we are calling `watch_bacula_SD-FD.py` using `watch -tn1`, the output below will be dynamically updated every second:
 
 ## Sample output using the above command line:
 ```
