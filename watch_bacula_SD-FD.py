@@ -54,8 +54,8 @@ import subprocess
 # Set some variables
 # ------------------
 progname = 'watch_bacula_SD-FD'
-version = '0.21'
-reldate = 'October 03, 2024'
+version = '0.22'
+reldate = 'December 24, 2025'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = 'watch_bacula_SD-FD.py'
@@ -111,7 +111,15 @@ def get_shell_result(cmd):
     'Given a command to run, return the subprocess.run() result object.'
     return subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-def running_jobs(fs):
+def get_max_total_running_jobs(fs):
+    'Return MaximumConcurrentJobs, total jobs run, current running jobs for the daemon.'
+    mtr_lst = []
+    mtr_lst.append(int(re.sub('.* max=(\\d+).*', '\\1', fs, flags = re.S)))
+    mtr_lst.append(int(re.sub('.* run=(\\d+),?.*', '\\1', fs, flags = re.S)))
+    mtr_lst.append(int(re.sub('.* running=(\\d+)?.*', '\\1', fs, flags = re.S)))
+    return mtr_lst
+
+def get_running_jobs_blk(fs):
     'Given a full_status output, use re.sub() to grab the "Running Jobs:" section from the full_status output.'
     return re.sub('.*Running Jobs:\n(.+?)\n====.*', '\\1', fs, flags = re.S)
 
@@ -141,36 +149,38 @@ def get_and_clean_output(cl):
     full_status = get_shell_result(cmd).stdout
     if print_daemon_ver or print_daemon_name:
         version, daemon = get_version_and_daemon(full_status)
-    running_status = running_jobs(full_status)
-    # Try to get the cloud transfer status if we are contacting an SD
-    # ---------------------------------------------------------------
-    if not cl:
-        if print_cloud_stats:
-            cloud_status = cloud_xfers(full_status)
-            cloud_status = re.sub(' +(Uploads)', '\n\\1:', cloud_status)
-            cloud_status = re.sub(' +(Downloads)', '\\1:', cloud_status)
-        # Do we print the spooling information for an SD?
-        # -----------------------------------------------
-        if not print_spool_line:
-            running_status = re.sub('    spooling=.+?\n', '', running_status, flags = re.S)
-    for remove_str in remove_str_lst:
-        running_status = re.sub(remove_str, '', running_status, flags = re.S)
-    running_status = re.sub('(JobId |Reading: |Writing: )', '\n\\1', running_status, flags = re.S)
-    if strip_jobname:
-        running_status = re.sub(r'\.[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}\.[0-9]{2}\.[0-9}{2}_[0-9].*? ', ' ', running_status)
+    max, total, running = get_max_total_running_jobs(full_status)
+    if running > 0:
+        running_jobs_blk = get_running_jobs_blk(full_status)
+        # Try to get the cloud transfer status if we are contacting an SD
+        # ---------------------------------------------------------------
+        if not cl:
+            if print_cloud_stats:
+                cloud_status = cloud_xfers(full_status)
+                cloud_status = re.sub(' +(Uploads)', '\n\\1:', cloud_status)
+                cloud_status = re.sub(' +(Downloads)', '\\1:', cloud_status)
+            # Do we print the spooling information for an SD?
+            # -----------------------------------------------
+            if not print_spool_line:
+                running_jobs_blk = re.sub('    spooling=.+?\n', '', running_jobs_blk, flags = re.S)
+        for remove_str in remove_str_lst:
+            running_jobs_blk = re.sub(remove_str, '', running_jobs_blk, flags = re.S)
+        running_jobs_blk = re.sub('(JobId |Reading: |Writing: )', '\n\\1', running_jobs_blk, flags = re.S)
+        if strip_jobname:
+            running_jobs_blk = re.sub(r'\.[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}\.[0-9]{2}\.[0-9}{2}_[0-9].*? ', ' ', running_jobs_blk)
     header_str = '\n' + ('Client: ' + client if cl else 'Storage: ' + storage) \
                + (' (' if print_daemon_ver or print_daemon_name else '') \
                + (daemon if print_daemon_name else '') \
                + (' ' if print_daemon_name and print_daemon_ver else '') \
                + ('v' + version if print_daemon_ver else '') \
                + (')' if print_daemon_ver or print_daemon_name else '') \
-               + (' - No Jobs Running' if len(running_status) == 0 else '') \
+               + ' | Jobs - max:' + str(max) + ' total:' + str(total) + ' running:' + str(running) \
                + '\n'
     line = '='*(len(header_str) - 2)
     return (line + header_str + line \
-          + ('\n' if len(running_status) == 0 else '') \
-          + (running_status if len(running_status) > 0 else '') \
-          + (cloud_status + '\n' if not cl and (len(cloud_status) > 0 and len(running_status) > 0) else ''))
+          + ('\n' if running == 0 else '') \
+          + (running_jobs_blk if running > 0 else '') \
+          + (cloud_status + '\n' if not cl and (len(cloud_status) > 0 and running > 0) else ''))
 
 # ================
 # BEGIN the script
@@ -211,5 +221,5 @@ output = ''
 for storage in storage_lst:
     output += ('\n' if storage_lst.index(storage) != 0 else '') + get_and_clean_output(False)
 for client in client_lst:
-    output += ('\n' if client_lst.index(client) != 0 or len(storage_lst) !=0 else '') + get_and_clean_output(True)
+    output += ('\n' if client_lst.index(client) != 0 or len(storage_lst) != 0 else '') + get_and_clean_output(True)
 print(output)
